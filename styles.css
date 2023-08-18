@@ -1,0 +1,38 @@
+#json-container {
+    padding: 20px;
+    border: 1px solid #ccc;
+    background-color: #f5f5f5;
+}
+
+/* Style for inactive buttons */
+button {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+/* Style for active buttons */
+button.active {
+    background-color: #4caf50;
+    color: white;
+}
+
+.data-point {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px;
+    width: 300px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.data-point > div {
+    margin-bottom: 5px;
+}
+
+.data-point-mainstat {
+    font-size: 18px;
+    font-weight: bold;
+}
