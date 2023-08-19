@@ -1,7 +1,6 @@
-#json-container {
-    padding: 20px;
-    border: 1px solid #ccc;
-    background-color: #f5f5f5;
+body {
+    color: #ddd;
+    background-color: rgb(10, 5, 30);
 }
 
 /* Style for inactive buttons */
@@ -23,7 +22,7 @@ button.active {
     border: 1px solid #ccc;
     padding: 10px;
     margin: 10px;
-    width: 300px;
+    width: 160px;
     display: inline-block;
     vertical-align: top;
 }
@@ -35,4 +34,22 @@ button.active {
 .data-point-mainstat {
     font-size: 18px;
     font-weight: bold;
+    background-color: rgba(200, 200, 250, 0.375);
+    color: #f1a23c;
+}
+
+.data-point-substat {
+    background-color: rgba(200, 200, 250, 0.05);
+    color: #eee;
+}
+
+.data-point-substat > * {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.substat-styling {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

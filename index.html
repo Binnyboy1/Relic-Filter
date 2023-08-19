@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSON Data Filter</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div>
+        <label>Select main stat(s) to filter by:</label>
+        <div id="main-stat-buttons">
+            <!-- Main stat buttons will be added here dynamically -->
+        </div>
+    </div>
+
+    <div>
+        <label>Select sub stat(s) to filter by:</label>
+        <div id="sub-stat-buttons">
+            <!-- Sub stat buttons will be added here dynamically -->
+        </div>
+    </div>
+
+    <div>
+        <label>Leniency:</label>
+        <span id="leniency-value">0</span>
+        <button id="increase-leniency">+</button>
+        <button id="decrease-leniency">-</button>
+    </div>
+
+    <button id="toggle-strict">Strict</button>
+
+    <h2><span id="data-points-count">0</span></h2>
+
+    <div class="data-point">
+        <p class="data-points-mainstat">TEST</p>
+        <div class="data-point-substat">
+            <div class="substat-styling">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+cIEwIeFpZYbMoAAAFySURBVCjPY2CgPWBmYGdgYWD4jybMgswxZTjNfipU1O77u5tHtY8yvMdQDQMnGQwFL055cf3b+18f787JVGJgRMgxoqhkXO2knvSV5e17WRlN56erY0qOvGLENE+NgYHn/sL///////n55OrDS39+PpiB6jQo+M9QoPXx5v/////////39575zy69P54oeRXTM9yCu4O5FSBsJhYju2u7Jd4z/VREN89C9GrPry//oeDPj4dLKrQYONH8oMHAwHG68s9PmLIfHw5WmIsxMPpjum6C6Zf7/+Hg44MyNwZeBkYpDH8wXij5h1D3/9/fT3fvL1royMCGHuKM6xzfnf73//fPP78Qyr/cXevNwIyIWQYGhmyGksfsR6W/3tt9Y5uYIrswRIpNUFjs+s5zX9oxHMDGwM7ANtnu1WGYmd9fLbGEWY4Ujiq/pBgOMeQe+ZbtF8HI9+/3r88/n71+jC+hMTKwMLAzsDGwMDAyMDxhoBUAAL6FwZEzt10nAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIzLTA4LTE5VDAyOjMwOjE3KzAwOjAwliv+8AAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMy0wOC0xOVQwMjozMDoxNyswMDowMOd2RkwAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjMtMDgtMTlUMDI6MzA6MjIrMDA6MDBs1E/XAAAAAElFTkSuQmCC" alt="SPD">
+                <p>5</p>
+            </div>
+        </div>
+    </div>
+    <div id="data-grid"></div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
