@@ -45,43 +45,83 @@ function updateDataGrid(data) {
     let dataPointsCount = 0; // Initialize the count
     
     data.forEach(item => {
-        const dataPointDiv = document.createElement('div');
-        dataPointDiv.classList.add('data-point'); // You can style this class in your CSS
+        /* Visual
+
+        base
+        ↳ base.1 ----------- mainStat div
+          ↳ base.1.1 ------- subStat content div
+            ↳ base.1.1.1 --- subStat img
+            ↳ base.1.1.2 --- subStat name
+          ↳ base.1.1 ------- subStat val
+        ↳ base.2 ----------- subStat div
+          ↳ base.2.1 ------- subStat styling div
+            ↳ base.2.1.1 --- subStat img
+            ↳ base.2.1.2 --- subStat val
         
-        const mainStatDiv = document.createElement('p');
-        const mainStatName = mainStatKeyToName[item.mainStatKey] || item.mainStatKey; // Use the mapping or fallback to key
-        mainStatDiv.classList.add('data-point-mainstat');
-        mainStatDiv.textContent = `${mainStatName}`;
+        */
+
+        const dataPointDiv = document.createElement('div'); // base
+        dataPointDiv.classList.add('data-point');           // ▲
         
-        const subStatsDiv = document.createElement('div');
+        const mainStatDiv = document.createElement('div');      // base.1
+        mainStatDiv.classList.add('data-point-mainstat');       // ▲
+
+        const mainStatContent = document.createElement('div');      // base.1.1
+        const mainStatValue = document.createElement('div');        // base.1.2
+        const mainStatName = mainStatKeyToName[item.mainStatKey] || item.mainStatKey;
+        const mainStatImageSrc = statToImage[mainStatName] || mainStatName;
+
+        const mainStatImage = document.createElement('img');            // base.1.1.1
+        mainStatImage.src = `${mainStatImageSrc}`;
+        mainStatImage.alt = mainStatName;
+        const mainStatText = document.createElement('p');               // base.1.1.2
+        mainStatText.textContent = mainStatName;
+
+        mainStatContent.appendChild(mainStatImage);                     // +base.1.1.1
+        mainStatContent.appendChild(mainStatText);                      // +base.1.1.2
+
+        // Different output for stats that aren't percentages
+        if (item.mainStatKey.includes('SPD') || item.slotKey === "Head" || item.slotKey === "Hand") {
+            mainStatValue.textContent = `+${item.level}`;
+        } else {
+            mainStatValue.textContent = `+${item.level}%`;
+        }
+        // +base.1.2
+        mainStatDiv.appendChild(mainStatContent);                   // +base.1.1
+        mainStatDiv.appendChild(mainStatValue);                     // +base.1.2
+        dataPointDiv.appendChild(mainStatDiv);                  // +base.1
+        
+        const subStatsDiv = document.createElement('div');      // base.2
         subStatsDiv.classList.add('data-point-substat');
         
         item.subStats.forEach(subStat => {
-            const subStatDiv = document.createElement('div');
+            const subStatDiv = document.createElement('div');       // base.2.1
             const subStatName = subStatKeyToName[subStat.key] || subStat.key;
             const subStatImageSrc = statToImage[subStatName] || subStatName;
-            subStatDiv.classList.add('substat-styling');
 
             // Create the image element
-            const subStatImage = document.createElement('img');
+            const subStatImage = document.createElement('img');         // base.2.1.1
             subStatImage.src = `${subStatImageSrc}`;
             subStatImage.alt = subStatName;
 
-            // Create a span element for substat name and value
-            const subStatContent = document.createElement('div');
-            subStatContent.textContent = `${subStat.value}`;
+            // Create a value element
+            const subStatValue = document.createElement('div');         // base.2.1.2
+            if (subStat.key.includes('_')) {
+                subStatValue.textContent = `${subStat.value}%`;
+            } else {
+                subStatValue.textContent = `${subStat.value}`;
+            }
 
-            subStatDiv.appendChild(subStatImage);
-            subStatDiv.appendChild(subStatContent);
-            subStatsDiv.appendChild(subStatDiv);
+            subStatDiv.appendChild(subStatImage);                       // +base.2.1.1
+            subStatDiv.appendChild(subStatValue);                       // +base.2.1.2
+            subStatsDiv.appendChild(subStatDiv);                    // +base.2.1
         });
         
-        dataPointDiv.appendChild(mainStatDiv);
-        dataPointDiv.appendChild(subStatsDiv);
+        dataPointDiv.appendChild(subStatsDiv);                  // +base.2
         
-        dataGrid.appendChild(dataPointDiv);
+        dataGrid.appendChild(dataPointDiv);                     // +base
 
-        dataPointsCount++; // Increment the count for each data point
+        dataPointsCount++;
     });
 
     // Update the count in the UI

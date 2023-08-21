@@ -1,54 +1,63 @@
-body {
+body {                              /* General styling */
     color: #ddd;
     background-color: rgb(10, 5, 30);
 }
 
-/* Style for inactive buttons */
-button {
+button {                            /* Style for inactive buttons */
     background-color: #f0f0f0;
     border: none;
     padding: 5px 10px;
     margin: 5px;
     cursor: pointer;
 }
-
-/* Style for active buttons */
-button.active {
+button.active {                     /* Style for active buttons */
     background-color: #4caf50;
     color: white;
 }
 
-.data-point {
+.data-point {                       /* Relic Div */
     border: 1px solid #ccc;
-    padding: 10px;
     margin: 10px;
-    width: 160px;
+    width: 180px;
     display: inline-block;
     vertical-align: top;
 }
-
-.data-point > div {
+.data-point > div {                 /* ↳ Margins for Relic Div */
     margin-bottom: 5px;
 }
-
-.data-point-mainstat {
-    font-size: 18px;
+.data-point-mainstat {                  /* Main Stat styling */
     font-weight: bold;
     background-color: rgba(200, 200, 250, 0.375);
     color: #f1a23c;
-}
 
-.data-point-substat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 10px 5px 10px;
+}
+.data-point-mainstat > * {                  /* ↳ Larger header text size */
+    scale: 1.15;
+}
+.data-point-mainstat > div:first-child {    /* ↳ Flex styling for Img and Text */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.data-point-mainstat > div > p {                  /* ↳ Margins for Text */
+    margin: 0 0 0 3px;
+}
+.data-point-mainstat > * > img {            /* ↳ Color adjustment for Img */
+    filter: brightness(0) saturate(100%) invert(72%) sepia(68%) saturate(2158%) hue-rotate(335deg) brightness(109%) contrast(89%);
+}
+.data-point-substat {                   /* Sub Stat container */
     background-color: rgba(200, 200, 250, 0.05);
     color: #eee;
+    margin: 10px;
 }
-
-.data-point-substat > * {
+.data-point-substat > * {               /* Sub Stat styling */
     font-size: 16px;
     font-weight: bold;
-}
 
-.substat-styling {
     display: flex;
     justify-content: space-between;
     align-items: center;
