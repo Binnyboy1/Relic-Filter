@@ -331,7 +331,7 @@ const displayOptions = {
     "Sprightly Vonwacq": "Vonwacq",
     "Talia: Kingdom of Banditry": "Talia",
 
-    "Head": "Helmet",
+    "Head": "Head",
     "Hands": "Gloves",
     "Body": "Body",
     "Feet": "Boots",
