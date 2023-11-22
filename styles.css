@@ -23,7 +23,7 @@ button.active {                     /* Style for active buttons */
     vertical-align: top;
 }
 .data-point > div {                 /* ↳ Margins for Relic Div */
-    margin-bottom: 5px;
+    /* margin-bottom: 5px; */
 }
 .data-point-mainstat {                  /* Main Stat styling */
     font-weight: bold;
@@ -52,7 +52,8 @@ button.active {                     /* Style for active buttons */
 .data-point-substat {                   /* Sub Stat container */
     background-color: rgba(200, 200, 250, 0.05);
     color: #eee;
-    margin: 10px;
+    padding: 10px;
+    height: 80px;
 }
 .data-point-substat > * {               /* Sub Stat styling */
     font-size: 16px;
@@ -61,4 +62,13 @@ button.active {                     /* Style for active buttons */
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+.data-point-context {                   /* Context container */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+}
+.data-point-context > * {               /* Context text styling */
+    margin: 0;
 }

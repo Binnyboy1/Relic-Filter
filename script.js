@@ -1,6 +1,6 @@
 // Function to fetch and display JSON data
 function fetchJSONData() {
-    fetch('HSRScanData_20230814_154944.json')
+    fetch('HSRScanData_20231121_220545.json')
         .then(response => response.json())
         .then(data => {
             updateDataGrid(data.relics) // Call updateDataGrid with the data.relics parameter
@@ -10,26 +10,40 @@ function fetchJSONData() {
 }
 
 // Function to filter JSON data based on selected keyword
-function filterData(data, mainStatFilter, subStatFilter) {
+function filterData(data, setFilter, slotFilter, mainstatFilter, substatFilter) {
     return data.filter(item => {
-        const matchesMainStat = mainStatFilter.length === 0 || mainStatFilter.includes(item.mainStatKey);
 
-        // Retrieve the relic's substats 
-        const availableSubStats = item.subStats.map(subStat => subStat.key);
+        // Check if set matches
+        const matchesSet = setFilter.length === 0 || setFilter.includes(item.set);
+        if (matchesSet) {
 
-        // Check how many the relic's substats match the filtered substats
-        const matchingSubStats = availableSubStats.filter(subStat =>
-            subStatFilter.includes(subStat)
-        );
+            // Check if slot matches
+            const matchesSlot = slotFilter.length === 0 || slotFilter.includes(item.slot);
+            if (matchesSlot) {
 
-        // Returns true if the relic meets the restrictions and filters we set
-        if (availableSubStats.length === 3) {
-            if (matchingSubStats.length + leniency - strict >= Math.min(availableSubStats.length, subStatFilter.length)) {
-                return true;
-            }
-        } else {
-            if (matchingSubStats.length + leniency >= Math.min(availableSubStats.length, subStatFilter.length)) {
-                return true;
+                // Check if main stat matches
+                const matchesMainstat = mainstatFilter.length === 0 || mainstatFilter.includes(item.mainstat);
+                if (matchesMainstat) {
+
+                    // Retrieve the relic's substats 
+                    const availableSubstats = item.substats.map(substats => substats.key);
+
+                    // Check how many the relic's substats match the filtered substats
+                    const matchingSubstats = availableSubstats.filter(substat =>
+                        substatFilter.includes(substat)
+                    );
+
+                    // Returns true if the relic meets the restrictions and filters we set
+                    if (availableSubstats.length === 3) {
+                        if (matchingSubstats.length + leniency - strict >= Math.min(availableSubstats.length, substatFilter.length)) {
+                            return true;
+                        }
+                    } else {
+                        if (matchingSubstats.length + leniency >= Math.min(availableSubstats.length, substatFilter.length)) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
         return false;
@@ -48,76 +62,93 @@ function updateDataGrid(data) {
         /* Visual
 
         base
-        ↳ base.1 ----------- mainStat div
-          ↳ base.1.1 ------- subStat content div
-            ↳ base.1.1.1 --- subStat img
-            ↳ base.1.1.2 --- subStat name
-          ↳ base.1.1 ------- subStat val
-        ↳ base.2 ----------- subStat div
-          ↳ base.2.1 ------- subStat styling div
-            ↳ base.2.1.1 --- subStat img
-            ↳ base.2.1.2 --- subStat val
+        ↳ base.1 ----------- mainstat div
+          ↳ base.1.1 -------> content div
+            ↳ base.1.1.1 --->> substat img
+            ↳ base.1.1.2 --->> substat name
+          ↳ base.1.2 -------> substat val
+        ↳ base.2 ----------- substats div
+          ↳ base.2.1 -------> substat styling div
+            ↳ base.2.1.1 --->> substat img
+            ↳ base.2.1.2 --->> substat val
+        ↳ base.3 ----------- context div
+          ↳ base.3.1 -------> set
+          ↳ base.3.2 -------> slot
         
         */
 
         const dataPointDiv = document.createElement('div'); // base
         dataPointDiv.classList.add('data-point');           // ▲
         
-        const mainStatDiv = document.createElement('div');      // base.1
-        mainStatDiv.classList.add('data-point-mainstat');       // ▲
+        const mainstatDiv = document.createElement('div');      // base.1
+        mainstatDiv.classList.add('data-point-mainstat');       // ▲
 
-        const mainStatContent = document.createElement('div');      // base.1.1
-        const mainStatValue = document.createElement('div');        // base.1.2
-        const mainStatName = mainStatKeyToName[item.mainStatKey] || item.mainStatKey;
-        const mainStatImageSrc = statToImage[mainStatName] || mainStatName;
+        const mainstatContent = document.createElement('div');      // base.1.1
+        const mainstatValue = document.createElement('div');        // base.1.2
+        const mainstatName = mainstatToName[item.mainstat] || item.mainstat;
+        const mainstatImageSrc = statToImage[mainstatName] || mainstatName;
 
-        const mainStatImage = document.createElement('img');            // base.1.1.1
-        mainStatImage.src = `${mainStatImageSrc}`;
-        mainStatImage.alt = mainStatName;
-        const mainStatText = document.createElement('p');               // base.1.1.2
-        mainStatText.textContent = mainStatName;
+        const mainstatImage = document.createElement('img');            // base.1.1.1
+        mainstatImage.src = `${mainstatImageSrc}`;
+        mainstatImage.alt = mainstatName;
+        const mainstatText = document.createElement('p');               // base.1.1.2
+        mainstatText.textContent = mainstatName;
 
-        mainStatContent.appendChild(mainStatImage);                     // +base.1.1.1
-        mainStatContent.appendChild(mainStatText);                      // +base.1.1.2
+        mainstatContent.appendChild(mainstatImage);                     // +base.1.1.1
+        mainstatContent.appendChild(mainstatText);                      // +base.1.1.2
 
         // Different output for stats that aren't percentages
-        if (item.mainStatKey.includes('SPD') || item.slotKey === "Head" || item.slotKey === "Hand") {
-            mainStatValue.textContent = `+${item.level}`;
+        if (item.mainstat.includes('SPD') || item.slot === "Head" || item.slot === "Hand") {
+            mainstatValue.textContent = `+${item.level}`;
         } else {
-            mainStatValue.textContent = `+${item.level}%`;
+            mainstatValue.textContent = `+${item.level}%`;
         }
         // +base.1.2
-        mainStatDiv.appendChild(mainStatContent);                   // +base.1.1
-        mainStatDiv.appendChild(mainStatValue);                     // +base.1.2
-        dataPointDiv.appendChild(mainStatDiv);                  // +base.1
+        mainstatDiv.appendChild(mainstatContent);                   // +base.1.1
+        mainstatDiv.appendChild(mainstatValue);                     // +base.1.2
+        dataPointDiv.appendChild(mainstatDiv);                  // +base.1
         
-        const subStatsDiv = document.createElement('div');      // base.2
-        subStatsDiv.classList.add('data-point-substat');
+        const substatsDiv = document.createElement('div');      // base.2
+        substatsDiv.classList.add('data-point-substat');
         
-        item.subStats.forEach(subStat => {
-            const subStatDiv = document.createElement('div');       // base.2.1
-            const subStatName = subStatKeyToName[subStat.key] || subStat.key;
-            const subStatImageSrc = statToImage[subStatName] || subStatName;
+        item.substats.forEach(substat => {
+            const substatDiv = document.createElement('div');       // base.2.1
+            const substatName = substatToName[substat.key] || substat.key;
+            const substatImageSrc = statToImage[substatName] || substatName;
 
             // Create the image element
-            const subStatImage = document.createElement('img');         // base.2.1.1
-            subStatImage.src = `${subStatImageSrc}`;
-            subStatImage.alt = subStatName;
+            const substatImage = document.createElement('img');         // base.2.1.1
+            substatImage.src = `${substatImageSrc}`;
+            substatImage.alt = substatName;
 
             // Create a value element
-            const subStatValue = document.createElement('div');         // base.2.1.2
-            if (subStat.key.includes('_')) {
-                subStatValue.textContent = `${subStat.value}%`;
+            const substatValue = document.createElement('div');         // base.2.1.2
+            if (substat.key.includes('_')) {
+                substatValue.textContent = `${substat.value}%`;
             } else {
-                subStatValue.textContent = `${subStat.value}`;
+                substatValue.textContent = `${substat.value}`;
             }
 
-            subStatDiv.appendChild(subStatImage);                       // +base.2.1.1
-            subStatDiv.appendChild(subStatValue);                       // +base.2.1.2
-            subStatsDiv.appendChild(subStatDiv);                    // +base.2.1
+            substatDiv.appendChild(substatImage);                       // +base.2.1.1
+            substatDiv.appendChild(substatValue);                       // +base.2.1.2
+            substatsDiv.appendChild(substatDiv);                    // +base.2.1
         });
         
-        dataPointDiv.appendChild(subStatsDiv);                  // +base.2
+        dataPointDiv.appendChild(substatsDiv);                  // +base.2
+
+        const contextDiv = document.createElement('div');       // base.3
+        contextDiv.classList.add('data-point-context');
+
+        const setName = displayOptions[item.set] || item.set;
+        const slotName = displayOptions[item.slot] || item.slot;
+        const contextSet = document.createElement('p');             // base.3.1
+        contextSet.textContent = setName;
+        const contextSlot = document.createElement('p');            // base.3.2
+        contextSlot.textContent = slotName;
+
+        contextDiv.appendChild(contextSet);                     // +base.3.1
+        contextDiv.appendChild(contextSlot);                    // +base.3.2
+        dataPointDiv.appendChild(contextDiv);                   // +base.3
         
         dataGrid.appendChild(dataPointDiv);                     // +base
 
@@ -130,10 +161,12 @@ function updateDataGrid(data) {
 
 // Responsible for dynamically updating the JSON display with the filters given
 function updateFilterButtons(data) {
-    const selectedMainStats = Array.from(mainStatButtons.querySelectorAll('button.active')).map(button => button.value);
-    const selectedSubStats = Array.from(subStatButtons.querySelectorAll('button.active')).map(button => button.value);
+    const selectedSets = Array.from(setButtons.querySelectorAll('button.active')).map(button => button.value);
+    const selectedSlots = Array.from(slotButtons.querySelectorAll('button.active')).map(button => button.value);
+    const selectedMainstats = Array.from(mainstatButtons.querySelectorAll('button.active')).map(button => button.value);
+    const selectedSubstats = Array.from(substatButtons.querySelectorAll('button.active')).map(button => button.value);
 
-    const filteredData = filterData(data.relics, selectedMainStats, selectedSubStats);
+    const filteredData = filterData(data.relics, selectedSets, selectedSlots, selectedMainstats, selectedSubstats);
     updateDataGrid(filteredData); // Update the data grid and count
 }
 
@@ -142,8 +175,8 @@ function createToggleButtons(containerId, options, onClickHandler, data) {
 
     options.forEach(option => {
         const button = document.createElement('button');
-        button.textContent = option;
-        button.value = option; // !!! change this to be user-friendly later on !!!
+        button.textContent = displayOptions[option]; // user-friendly
+        button.value = option;
         
         // Attach a click event listener to the button
         button.addEventListener('click', () => {
@@ -192,14 +225,122 @@ function createButtonFunctionality(buttonId, data) {
 }
 
 function setupFilterButtons(data) {
-    createToggleButtons('main-stat-buttons', mainStatOptions, updateFilterButtons, data);
-    createToggleButtons('sub-stat-buttons', subStatOptions, updateFilterButtons, data);
+    createToggleButtons('set-buttons', setOptions, updateFilterButtons, data);
+    createToggleButtons('slot-buttons', slotOptions, updateFilterButtons, data);
+    createToggleButtons('main-stat-buttons', mainstatOptions, updateFilterButtons, data);
+    createToggleButtons('sub-stat-buttons', substatOptions, updateFilterButtons, data);
     createButtonFunctionality('increase-leniency', data);
     createButtonFunctionality('decrease-leniency', data);
     createButtonFunctionality('toggle-strict', data);
 }
 
-const mainStatOptions = [
+// List of piece identifiers
+const slotOptions = [
+    "Head",
+    "Hands",
+    "Body",
+    "Feet",
+    "Planar Sphere",
+    "Link Rope"
+]
+
+// List of relic set identifiers
+const setOptions = [
+    "Band of Sizzling Thunder",
+    "Champion of Streetwise Boxing",
+    "Eagle of Twilight Line",
+    "Firesmith of Lava-Forging",
+    "Genius of Brilliant Stars",
+    "Guard of Wuthering Snow",
+    "Hunter of Glacial Forest",
+    "Knight of Purity Palace",
+    "Longevous Disciple",
+    "Messenger Traversing Hackerspace",
+    "Musketeer of Wild Wheat",
+    "Passerby of Wandering Cloud",
+    "Prisoner in Deep Confinement",
+    "The Ashblazing Grand Duke",
+    "Thief of Shooting Meteor",
+    "Wastelander of Banditry Desert",
+
+    "Belobog of the Architects",
+    "Broken Keel",
+    "Celestial Differentiator",
+    "Firmament Frontline: Glamoth",
+    "Fleet of the Ageless",
+    "Inert Salsotto",
+    "Pan-Cosmic Commercial Enterprise",
+    "Penacony, Land of the Dreams",
+    "Rutilant Arena",
+    "Space Sealing Station",
+    "Sprightly Vonwacq",
+    "Talia: Kingdom of Banditry"
+];
+
+// Pairing stats to their display names
+const displayOptions = {
+    "Outgoing Healing Boost": "Heal",
+    "Energy Regeneration Rate": "ERR",
+    "Physical DMG Boost": "Physical",
+    "Fire DMG Boost": "Fire",
+    "Ice DMG Boost": "Ice",
+    "Lightning DMG Boost": "Lightning",
+    "Wind DMG Boost": "Wind",
+    "Quantum DMG Boost": "Quantum",
+    "Imaginary DMG Boost": "Imaginary",
+    "HP": "HP",
+    "HP_": "HP%",
+    "ATK": "ATK",
+    "ATK_": "ATK%",
+    "DEF": "DEF",
+    "DEF_": "DEF%",
+    "SPD": "SPD",
+    "CRIT Rate_": "cRate",
+    "CRIT DMG_": "cDMG",
+    "Break Effect_": "Break",
+    "Effect Hit Rate_": "EHR",
+    "Effect RES_": "RES",
+
+    "Band of Sizzling Thunder": "Sizzling",
+    "Champion of Streetwise Boxing": "Boxing",
+    "Eagle of Twilight Line": "Eagle",
+    "Firesmith of Lava-Forging": "Firesmith",
+    "Genius of Brilliant Stars": "Genius",
+    "Guard of Wuthering Snow": "Guard",
+    "Hunter of Glacial Forest": "Glacial",
+    "Knight of Purity Palace": "Knight",
+    "Longevous Disciple": "Longevous",
+    "Messenger Traversing Hackerspace": "Messenger",
+    "Musketeer of Wild Wheat": "Musketeer",
+    "Passerby of Wandering Cloud": "Passerby",
+    "Prisoner in Deep Confinement": "Prisoner",
+    "The Ashblazing Grand Duke": "Ashblazing",
+    "Thief of Shooting Meteor": "Thief",
+    "Wastelander of Banditry Desert": "Wastelander",
+
+    "Belobog of the Architects": "Belobog",
+    "Broken Keel": "Keel",
+    "Celestial Differentiator": "Celestial",
+    "Firmament Frontline: Glamoth": "Glamoth",
+    "Fleet of the Ageless": "Fleet",
+    "Inert Salsotto": "Salsotto",
+    "Pan-Cosmic Commercial Enterprise": "Pan Cosmic",
+    "Penacony, Land of the Dreams": "Penacony",
+    "Rutilant Arena": "Rutilant",
+    "Space Sealing Station": "SSS",
+    "Sprightly Vonwacq": "Vonwacq",
+    "Talia: Kingdom of Banditry": "Talia",
+
+    "Head": "Helmet",
+    "Hands": "Gloves",
+    "Body": "Body",
+    "Feet": "Boots",
+    "Planar Sphere": "Orb",
+    "Link Rope": "Rope"
+};
+
+// List of main stat identifiers
+const mainstatOptions = [
     "HP",
     "HP_",
     "ATK",
@@ -221,7 +362,8 @@ const mainStatOptions = [
     "Imaginary DMG Boost"
 ];
 
-const subStatOptions = [
+// List of sub stat identifiers
+const substatOptions = [
     "HP",
     "HP_",
     "ATK",
@@ -236,7 +378,8 @@ const subStatOptions = [
     "Effect RES_"
 ];
 
-const mainStatKeyToName = {
+// Pairing stats to their icon counterparts (statToImage)
+const mainstatToName = {
     "HP": "HP",
     "ATK": "ATK",
     "DEF": "DEF",
@@ -255,7 +398,8 @@ const mainStatKeyToName = {
     "Imaginary DMG Boost": "Imaginary"
 };
 
-const subStatKeyToName = {
+// Pairing stats to their icon counterparts (statToImage)
+const substatToName = {
     "HP": "HP",
     "HP_": "HP",
     "ATK": "ATK",
@@ -270,6 +414,7 @@ const subStatKeyToName = {
     "Effect RES_": "RES"
 };
 
+// Icon images
 const statToImage = {
     "HP": "data:image/webp;base64,UklGRkIBAABXRUJQVlA4TDYBAAAvE8AEEJXAzbbtePYukjVcZgQnC6TSGkll284CttpUTirb9m/05nv8xxEBx7a1Y8/6/kojsDEDYwC2bXb+W9tDMPo/SeU6lW2Wdt4JeHk2AYzNiFoCRiYdQN90st/wz2F+X2fXzJ/2YPUxufYapeLxxep9Dz7tegBdhSNNLtfvngxBpcqmJpnZN0VrT69e5nd46lWx0B5kezzZ9HL9VljNLVbPi0e9PVw5gFD0qloTSp3lOYT7v/0vhPU1ZQAWu1eFfVugjdaWD+DKzrYptgW+4FUI9PCgus5PbL8v9v+WYn5ldo3EX/Ui5vd2ipuKQu/4AOD42lzPrw8PuSIAXfPCoBX7nVN9tbLV2nG0u2fVGZPxclMATyWnD96uqz25T6YA6uXmANLKRpfTe60SvtxazzJxXp5G",
     "ATK": "data:image/webp;base64,UklGRhgBAABXRUJQVlA4TAsBAAAvE8AEEJVArrbtePQWEicNpAE14ezShVFEKrCdVU5Wto2xbXsmLmCsdxMBVwAAUlE2Jtuc8B3Nza7RNifbNdcH1Nm+24zJ9uY3Aa8zEhBApJC5LAlfSgLwYHplb7S0vH1weHX1tTYE2EAAKZfugKerE0ANJFGcPD+zPgvoQQBcLd4Bz24sAnYQnuTw4rntDcAP8JPN4Pnb6TMiXn23ioB4waVO65iik9v9c2v27A1vgd19gxZwry+W/TdAqBJJM1T9KTx5CLvJVAANqFOt7X36ggbjxWe1wZcAaGACI9rdOMLyWK0BxOvgORsu7Cxu4NyAih1CJlufqcRY4l49ZeVihnjl4IiIVwC/zkoA",
@@ -291,8 +436,10 @@ const statToImage = {
     "Imaginary": "data:image/webp;base64,UklGRhQCAABXRUJQVlA4TAcCAAAvE8AEEAVc27aNPTsoM9La1gO4stE5qdLatm3btm3btm39RvAGEVAAADAkzeKs+h9tJNu2/R9t27Zto9k2m22bx1Xgto3iY4ZnAPwrAI2Xi5IA8jsT4afj220uvt8ACpWdrieyCcyRUn/xH0nBPgjAUhoZowYSNhIE4I5IwcwAz1qkablYEdhU30xzvSK9aRNAzAlIrvbtTmrk1S7V0VpezM1miipQwIwrpBjzcQGOHl4H0+2VVPUFB9P2Hgmes5Gg0KtA43WXmrYXiNyDxXg/U8uPj+c7BaOsiLMdImdtYr7GRwkoVY762yMZowUCsy5ho3++uSuHyKXf4PkySYGqQmtj6OmW5unKzTkvJCfI3+vz6+5wpJnEfbzeGChVBQAExF3pbv/96W5/Zbg63dv16+vl3sNmMNrNUc+io/h621YOCG1YnmQjoCYE0ayo+xNrm8+P+xNzZSnx2RoyVhzPKcxPYNq0y5OArZZLyH9+XW9CbLn642N94vuvPRgkRsAtBw35gm4odXcW7D1R8vmTl5WaMtD6zZzwA8JABNHGAwLQEX97me/oDIkJXJsgY02VecELbtoE5r8H0c2CwNvvhsj+8NvTQD2BM5gFKiAmoK7nvX/v9EJov/njPdse9L6Yb+Z8KGAmitQh5wZnVX5BiqO4njAIgDhoFpJ2Quwoc4PeAsR0BQAA"
 }
 
-const mainStatButtons = document.getElementById('main-stat-buttons');
-const subStatButtons = document.getElementById('sub-stat-buttons');
+const setButtons = document.getElementById('set-buttons');
+const slotButtons = document.getElementById('slot-buttons');
+const mainstatButtons = document.getElementById('main-stat-buttons');
+const substatButtons = document.getElementById('sub-stat-buttons');
 let leniency = 0;
 let strict = 0;
 
