@@ -1,52 +1,130 @@
+// Global variables
+const setButtons = document.getElementById('set-buttons');
+const slotButtons = document.getElementById('slot-buttons');
+const mainstatButtons = document.getElementById('main-stat-buttons');
+const substatButtons = document.getElementById('sub-stat-buttons');
+
+let selectedSets = Array.from(setButtons.querySelectorAll('button.active')).map(button => button.value);
+let selectedSlots = Array.from(slotButtons.querySelectorAll('button.active')).map(button => button.value);
+let selectedMainstats = Array.from(mainstatButtons.querySelectorAll('button.active')).map(button => button.value);
+let selectedSubstats = Array.from(substatButtons.querySelectorAll('button.active')).map(button => button.value);
+
+let leniency = 0;
+let strict = 0;
+let minLvl = 0;
+let maxLvl = 15;
+
+
+
 // Function to fetch and display JSON data
 function fetchJSONData() {
     fetch('HSRScanData_20231121_220545.json')
         .then(response => response.json())
         .then(data => {
-            updateDataGrid(data.relics) // Call updateDataGrid with the data.relics parameter
+            updateDataGrid(data.relics); // Call updateDataGrid with the data.relics parameter
             setupFilterButtons(data); // Call setupFilterButtons with the data parameter
         })
         .catch(error => console.error('Error fetching JSON:', error));
 }
 
+window.onclick = function(event) {
+    const clickedButton = event.target.closest('.select');
+    if (clickedButton) {
+        const dropdownId = clickedButton.getAttribute('data-dropdown-id');
+        const allDropdowns = document.querySelectorAll('.container > [id^="dropdown"]');
+
+        allDropdowns.forEach(dropdown => {
+            if (dropdown.id !== dropdownId && dropdown.classList.contains('active')) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        const targetDropdown = document.getElementById(dropdownId);
+        if (targetDropdown) {
+            targetDropdown.classList.toggle('active');
+        }
+    } else {
+        const allDropdowns = document.querySelectorAll('.container > [id^="dropdown"]');
+        allDropdowns.forEach(dropdown => {
+            if (dropdown.classList.contains('active')) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+};
+document.querySelectorAll('.container > [id^="dropdown"]').forEach(dropdown => {
+    dropdown.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+});
+
+
 // Function to filter JSON data based on selected keyword
-function filterData(data, setFilter, slotFilter, mainstatFilter, substatFilter) {
+function filterData(data, quickUpdate) {
+    if (quickUpdate) {
+        const dataGrid = document.getElementById('data-grid');
+        const gridItems = dataGrid.children;
+
+        let cnt = 0;
+        for (let i = 0; i < gridItems.length; i++) {
+            const lvlClass = gridItems[i].classList[1]; // gets lvl that was saved as a div class
+            const lvl = parseInt(lvlClass, 10); // converts class into a number
+
+            const withinLvlRange = minLvl <= lvl && maxLvl >= lvl;
+            if (!withinLvlRange) {
+                gridItems[i].style.display = "none";
+            } else {
+                gridItems[i].style = "";
+                cnt++;
+            }
+        }
+
+        const dataPointsCountElement = document.getElementById('data-points-count');
+        dataPointsCountElement.textContent = cnt;
+        return;
+    }
+    
     return data.filter(item => {
 
         // Check if set matches
-        const matchesSet = setFilter.length === 0 || setFilter.includes(item.set);
+        const matchesSet = selectedSets.length === 0 || selectedSets.includes(item.set);
         if (matchesSet) {
 
             // Check if slot matches
-            const matchesSlot = slotFilter.length === 0 || slotFilter.includes(item.slot);
+            const matchesSlot = selectedSlots.length === 0 || selectedSlots.includes(item.slot);
             if (matchesSlot) {
 
                 // Check if main stat matches
-                const matchesMainstat = mainstatFilter.length === 0 || mainstatFilter.includes(item.mainstat);
+                const matchesMainstat = selectedMainstats.length === 0 || selectedMainstats.includes(item.mainstat);
                 if (matchesMainstat) {
 
-                    // Retrieve the relic's substats 
-                    const availableSubstats = item.substats.map(substats => substats.key);
+                    // Check if lvl is within the selected range
+                    const withinLvlRange = minLvl <= item.level && maxLvl >= item.level;
+                    if (withinLvlRange) {
+                        // Retrieve the relic's substats 
+                        const availableSubstats = item.substats.map(substats => substats.key);
 
-                    // Check how many the relic's substats match the filtered substats
-                    const matchingSubstats = availableSubstats.filter(substat =>
-                        substatFilter.includes(substat)
-                    );
+                        // Check how many the relic's substats match the filtered substats
+                        const matchingSubstats = availableSubstats.filter(substat =>
+                            selectedSubstats.includes(substat)
+                        );
 
-                    // Returns true if the relic meets the restrictions and filters we set
-                    if (availableSubstats.length === 3) {
-                        if (matchingSubstats.length + leniency - strict >= Math.min(availableSubstats.length, substatFilter.length)) {
-                            return true;
-                        }
-                    } else {
-                        if (matchingSubstats.length + leniency >= Math.min(availableSubstats.length, substatFilter.length)) {
-                            return true;
+                        // Returns true if the relic meets the restrictions and filters we set
+                        if (availableSubstats.length === 3) {
+                            if (matchingSubstats.length + leniency - strict >= Math.min(availableSubstats.length, selectedSubstats.length)) {
+                                return true;
+                            }
+                        } else {
+                            if (matchingSubstats.length + leniency >= Math.min(availableSubstats.length, selectedSubstats.length)) {
+                                return true;
+                            }
                         }
                     }
                 }
             }
         }
         return false;
+
     });
 }
 
@@ -61,113 +139,150 @@ function updateDataGrid(data) {
     data.forEach(item => {
         /* Visual
 
-        base
-        ↳ base.1 ----------- mainstat div
-          ↳ base.1.1 -------> content div
-            ↳ base.1.1.1 --->> substat img
-            ↳ base.1.1.2 --->> substat name
-          ↳ base.1.2 -------> substat val
-        ↳ base.2 ----------- substats div
-          ↳ base.2.1 -------> substat styling div
-            ↳ base.2.1.1 --->> substat img
-            ↳ base.2.1.2 --->> substat val
-        ↳ base.3 ----------- context div
-          ↳ base.3.1 -------> set
-          ↳ base.3.2 -------> slot
-        
+        border -------------- border
+        ↳ col.div1 ----------> div
+          ↳ col.div1.1 ------>> div
+            ↳ col.div1.1.1 -->>> img
+          ↳ col.div1.2 ------>> div
+            ↳ +text
+            ↳ col.div1.2.1 -->>> svg
+        ↳ col.div2 ----------> div
+          ↳ col.div2.1 ------>> div [x4]
+            ↳ col.div2.1.1 -->>> svg + inner <use>
+            ↳ col.div2.1.2 -->>> inner text
+
         */
 
-        const dataPointDiv = document.createElement('div'); // base
-        dataPointDiv.classList.add('data-point');           // ▲
-        
-        const mainstatDiv = document.createElement('div');      // base.1
-        mainstatDiv.classList.add('data-point-mainstat');       // ▲
-
-        const mainstatContent = document.createElement('div');      // base.1.1
-        const mainstatValue = document.createElement('div');        // base.1.2
-        const mainstatName = mainstatToName[item.mainstat] || item.mainstat;
-        const mainstatImageSrc = statToImage[mainstatName] || mainstatName;
-
-        const mainstatImage = document.createElement('img');            // base.1.1.1
-        mainstatImage.src = `${mainstatImageSrc}`;
-        mainstatImage.alt = mainstatName;
-        const mainstatText = document.createElement('p');               // base.1.1.2
-        mainstatText.textContent = mainstatName;
-
-        mainstatContent.appendChild(mainstatImage);                     // +base.1.1.1
-        mainstatContent.appendChild(mainstatText);                      // +base.1.1.2
-
-        // Different output for stats that aren't percentages
-        if (item.mainstat.includes('SPD') || item.slot === "Head" || item.slot === "Hand") {
-            mainstatValue.textContent = `+${item.level}`;
-        } else {
-            mainstatValue.textContent = `+${item.level}%`;
-        }
-        // +base.1.2
-        mainstatDiv.appendChild(mainstatContent);                   // +base.1.1
-        mainstatDiv.appendChild(mainstatValue);                     // +base.1.2
-        dataPointDiv.appendChild(mainstatDiv);                  // +base.1
-        
-        const substatsDiv = document.createElement('div');      // base.2
-        substatsDiv.classList.add('data-point-substat');
-        
-        item.substats.forEach(substat => {
-            const substatDiv = document.createElement('div');       // base.2.1
-            const substatName = substatToName[substat.key] || substat.key;
-            const substatImageSrc = statToImage[substatName] || substatName;
-
-            // Create the image element
-            const substatImage = document.createElement('img');         // base.2.1.1
-            substatImage.src = `${substatImageSrc}`;
-            substatImage.alt = substatName;
-
-            // Create a value element
-            const substatValue = document.createElement('div');         // base.2.1.2
-            if (substat.key.includes('_')) {
-                substatValue.textContent = `${substat.value}%`;
+        // calculate rv
+        let subRolls = [];
+        let cnt = 0;
+        let maxValue = 0;
+        item.substats.forEach(substat => { 
+            let val = substat.value/substatData[substat.key];
+            if (val < 4) {
+                subRolls.push(Math.ceil(val));
             } else {
-                substatValue.textContent = `${substat.value}`;
+                subRolls.push(val);
+                maxValue = cnt;
             }
-
-            substatDiv.appendChild(substatImage);                       // +base.2.1.1
-            substatDiv.appendChild(substatValue);                       // +base.2.1.2
-            substatsDiv.appendChild(substatDiv);                    // +base.2.1
+            cnt++;
         });
-        
-        dataPointDiv.appendChild(substatsDiv);                  // +base.2
 
-        const contextDiv = document.createElement('div');       // base.3
-        contextDiv.classList.add('data-point-context');
+        if (maxValue) {
+            if (item.level >= 12) {
+                let tempArr = subRolls.splice(maxValue, 1);
+                let otherRV = tempArr.reduce((sum, val) => sum + val, 0) - 3;
+                console.log(otherRV);
 
-        const setName = displayOptions[item.set] || item.set;
-        const slotName = displayOptions[item.slot] || item.slot;
-        const contextSet = document.createElement('p');             // base.3.1
-        contextSet.textContent = setName;
-        const contextSlot = document.createElement('p');            // base.3.2
-        contextSlot.textContent = slotName;
+                let max = false;
+                if (item.level == 15)
+                    max = true;
+    
+                if (subRolls[maxValue] == 4) {
+                    subRolls[maxValue] = 4;
+                    if (max)
+                        subRolls[maxValue] = 5;
+                } else if (subRolls[maxValue] > 4 && subRolls[maxValue] <= 5)
+                    subRolls[maxValue] = 5;
+                else if (subRolls[maxValue] > 5)
+                    subRolls[maxValue] = 6;
+            }
+        }
+        // console.log(subRolls);
 
-        contextDiv.appendChild(contextSet);                     // +base.3.1
-        contextDiv.appendChild(contextSlot);                    // +base.3.2
-        dataPointDiv.appendChild(contextDiv);                   // +base.3
-        
-        dataGrid.appendChild(dataPointDiv);                     // +base
+        const borderDiv = document.createElement('div');                                        // border
+        borderDiv.classList.add('v-border');                                                    // ▲
+
+        const columnDiv1 = document.createElement('div');                                           // border.div1
+        columnDiv1.classList.add('col-div-upper', 'glow');                                          // ▲
+
+        const columnDiv1_1 = document.createElement('div');                                             // border.div1.div1
+        columnDiv1_1.classList.add('col-div-specifics', 'glow-edge');                                   // ▲
+        columnDiv1_1.innerHTML = '✦✦✦✦✦';                                                                 // text
+
+        const relicImage = document.createElement('img');                                                   // border.div1.div1.img
+        relicImage.classList.add('img-relic');                                                              // ▲
+        relicImage.src = `${setImagesData[item.set]}${slotData[item.slot]}.png`;
+        relicImage.alt = `${item.set}, ${item.slot}`;
+        columnDiv1_1.appendChild(relicImage);                                                               // +border.div1.div1.img
+        columnDiv1.appendChild(columnDiv1_1);                                                           // +border.div1.div1
+
+        const columnDiv1_2 = document.createElement('div');                                             // border.div1.div2
+        columnDiv1_2.classList.add('v-border-text');                                                    // ▲
+        columnDiv1_2.innerHTML = `+${item.level}`;                                                      // text
+        borderDiv.classList.add(`${item.level}`);
+
+        if (slotOptions.indexOf(item.slot) > 1) {
+            const svgElement1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');              // border.div1.div2.svg
+            svgElement1.classList.add('svg-light');                                                         // ▲
+            svgElement1.setAttribute('width', '18');
+            svgElement1.setAttribute('height', '18');
+
+            const useElement1 = document.createElementNS('http://www.w3.org/2000/svg', 'use');                  // border.div1.div2.use
+            useElement1.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${mainstatToSVG[item.mainstat]}`); // ▲
+
+            svgElement1.appendChild(useElement1);                                                               // +border.div1.div2.use
+            columnDiv1_2.appendChild(svgElement1);                                                          // +border.div1.div2.svg
+        }
+        columnDiv1.appendChild(columnDiv1_2);                                                           // +border.div1.div2
+        borderDiv.appendChild(columnDiv1);                                                          // +border.div1
+
+
+
+        const columnDiv2 = document.createElement('div');                                           // border.div2
+        columnDiv2.classList.add('col-div-lower', 'data-point-substat');                            // ▲
+
+        cnt = 0;
+        item.substats.forEach(substat => {
+            const columnDiv2_1 = document.createElement('div');                                         // border.div2.div
+            // const substatName = substatToName[substat.key] || substat.key;
+
+            const svgElement2 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');              // border.div2.div.svg
+            svgElement2.classList.add('svg-light');                                                         // ▲
+            svgElement2.setAttribute('width', '18');
+            svgElement2.setAttribute('height', '18');
+
+            const useElement2 = document.createElementNS('http://www.w3.org/2000/svg', 'use');                  // border.div2.div.use
+            useElement2.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${substatToSVG[substat.key]}`);    // ▲
+
+            svgElement2.appendChild(useElement2);                                                               // +border.div2.div.use
+            columnDiv2_1.appendChild(svgElement2);                                                          // +border.div2.div.svg
+            /*
+            if (substat.key.includes('_')) {
+                columnDiv2_1.innerHTML = `${substat.value}%`;
+            } else {
+                columnDiv2_1.innerHTML = `${substat.value}`;
+            }
+            */
+            columnDiv2_1.innerHTML += '•'.repeat(subRolls[cnt]);                                            // text
+            columnDiv2.appendChild(columnDiv2_1);                                                       // +border.div2.div
+            cnt++;
+        });
+        borderDiv.appendChild(columnDiv2);                                                          // +border.div2
+        dataGrid.appendChild(borderDiv);                                                        // +border
 
         dataPointsCount++;
     });
 
     // Update the count in the UI
     dataPointsCountElement.textContent = dataPointsCount;
+
+
+
+//     const values = getAllInnerValues();
+//     console.log(values);
 }
 
 // Responsible for dynamically updating the JSON display with the filters given
 function updateFilterButtons(data) {
-    const selectedSets = Array.from(setButtons.querySelectorAll('button.active')).map(button => button.value);
-    const selectedSlots = Array.from(slotButtons.querySelectorAll('button.active')).map(button => button.value);
-    const selectedMainstats = Array.from(mainstatButtons.querySelectorAll('button.active')).map(button => button.value);
-    const selectedSubstats = Array.from(substatButtons.querySelectorAll('button.active')).map(button => button.value);
+    selectedSets = Array.from(setButtons.querySelectorAll('button.active')).map(button => button.value);
+    selectedSlots = Array.from(slotButtons.querySelectorAll('button.active')).map(button => button.value);
+    selectedMainstats = Array.from(mainstatButtons.querySelectorAll('button.active')).map(button => button.value);
+    selectedSubstats = Array.from(substatButtons.querySelectorAll('button.active')).map(button => button.value);
 
-    const filteredData = filterData(data.relics, selectedSets, selectedSlots, selectedMainstats, selectedSubstats);
+    const filteredData = filterData(data.relics, 0);
     updateDataGrid(filteredData); // Update the data grid and count
+    console.log(minLvl, maxLvl);
 }
 
 function createToggleButtons(containerId, options, onClickHandler, data) {
@@ -201,8 +316,17 @@ function createButtonFunctionality(buttonId, data) {
     if (buttonId === 'increase-leniency') {
         // Event listener for the "Increase" button
         button.addEventListener('click', () => {
-            leniency++;
-            updateLeniencyValue(data);
+            if (leniency < 4) {
+                leniency++;
+                updateLeniencyValue(data);
+                if (leniency == 4) {
+                    const plus = document.getElementById('increase-leniency');
+                    plus.classList.add('off');
+                } else if (leniency == 1) {
+                    const minus = document.getElementById('decrease-leniency');
+                    minus.classList.remove('off');
+                }
+            } 
         });
     } else if (buttonId === 'decrease-leniency') {
         // Event listener for the "Decrease" button
@@ -210,6 +334,13 @@ function createButtonFunctionality(buttonId, data) {
             if (leniency > 0) {
                 leniency--;
                 updateLeniencyValue(data);
+                if (leniency == 3) {
+                    const plus = document.getElementById('increase-leniency');
+                    plus.classList.remove('off');
+                } else if (leniency == 0) {
+                    const minus = document.getElementById('decrease-leniency');
+                    minus.classList.add('off');
+                }
             }
         });
     } else if (buttonId === 'toggle-strict') {
@@ -234,6 +365,99 @@ function setupFilterButtons(data) {
     createButtonFunctionality('toggle-strict', data);
 }
 
+
+
+
+// Scrollbar
+const minRange = document.getElementById('minRange');
+const maxRange = document.getElementById('maxRange');
+const minValueElement = document.getElementById('minValue');
+const maxValueElement = document.getElementById('maxValue');
+const minValue = parseInt(minRange.value);
+const maxValue = parseInt(maxRange.value);
+
+function updateMin() {
+    const minValue = parseInt(minRange.value);
+    const maxValue = parseInt(maxRange.value);
+
+    // Prevent min from exceeding max
+    if (minValue > maxValue) {
+        minRange.value = maxValue;
+    }
+
+    updateSliderBackground(minValue, maxValue, 15);
+    updateSliderValue(minRange, minValueElement);
+    minLvl = minRange.value;
+    filterData(NaN, 1);
+    console.log("hi");
+}
+
+function updateMax() {
+    const minValue = parseInt(minRange.value);
+    const maxValue = parseInt(maxRange.value);
+
+    // Prevent max from being less than min
+    if (maxValue < minValue) {
+        maxRange.value = minValue;
+    }
+
+    updateSliderBackground(minValue, maxValue, 15);
+    updateSliderValue(maxRange, maxValueElement);
+    maxLvl = maxRange.value;
+    filterData(NaN, 1);
+    console.log("bye");
+}
+
+function updateSliderValue(slider, valueDisplay) {
+    const value = slider.value;
+    valueDisplay.textContent = `+${value}`;
+}
+
+function updateSliderBackground(minValue, maxValue, maxRangeValue) {
+    // Calculate the percentage positions of the min and max values
+    const minPercent = (minValue / maxRangeValue) * 94;
+    const maxPercent = (maxValue / maxRangeValue) * 94;
+
+    // Get the slider progress div
+    const sliderProgress = document.querySelector('.slider .progress');
+
+    // Update the left and right positions of the progress bar
+    sliderProgress.style.left = `${3 + minPercent}%`;
+    sliderProgress.style.right = `${97 - maxPercent}%`;
+}
+
+// Initialize slider values and positions when the page loads
+updateSliderBackground(minValue, maxValue, 15);
+updateSliderValue(minRange, minValueElement);
+updateSliderValue(maxRange, maxValueElement);
+
+
+
+
+// check for relic lvls to filter by
+// function getAllInnerValues() {
+//     const elements = document.querySelectorAll('.v-border .col-div-upper .v-border-text');
+//     console.log(`Number of elements selected: ${elements.length}`);
+    
+//     const values = [];
+//     elements.forEach((element) => {
+//         const innerText = element.innerText.trim();
+        
+//         // Extracts only the digits
+//         const value = innerText.replace(/\D/g, ''); // \D matches any non-digit characters
+        
+//         if (value) {
+//             values.push(parseInt(value, 10));
+//         }
+//     });
+    
+//     return values;
+// }
+
+
+
+
+
 // List of piece identifiers
 const slotOptions = [
     "Head",
@@ -242,7 +466,7 @@ const slotOptions = [
     "Feet",
     "Planar Sphere",
     "Link Rope"
-]
+];
 
 // List of relic set identifiers
 const setOptions = [
@@ -277,6 +501,47 @@ const setOptions = [
     "Talia: Kingdom of Banditry"
 ];
 
+const setImagesData = {
+    "Passerby of Wandering Cloud":      "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/101_",
+    "Musketeer of Wild Wheat":          "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/102_",
+    "Knight of Purity Palace":          "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/103_",
+    "Hunter of Glacial Forest":         "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/104_",
+    "Champion of Streetwise Boxing":    "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/105_",
+    "Guard of Wuthering Snow":          "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/106_",
+    "Firesmith of Lava-Forging":        "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/107_",
+    "Genius of Brilliant Stars":        "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/108_",
+    "Band of Sizzling Thunder":         "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/109_",
+    "Eagle of Twilight Line":           "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/110_",
+    "Thief of Shooting Meteor":         "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/111_",
+    "Wastelander of Banditry Desert":   "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/112_",
+    "Longevous Disciple":               "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/113_",
+    "Messenger Traversing Hackerspace": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/114_",
+    "The Ashblazing Grand Duke":        "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/115_",
+    "Prisoner in Deep Confinement":     "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/116_",
+
+    "Space Sealing Station":            "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/301_",
+    "Fleet of the Ageless":             "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/302_",
+    "Pan-Cosmic Commercial Enterprise": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/303_",
+    "Belobog of the Architects":        "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/304_",
+    "Celestial Differentiator":         "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/305_",
+    "Inert Salsotto":                   "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/306_",
+    "Talia: Kingdom of Banditry":       "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/307_",
+    "Sprightly Vonwacq":                "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/308_",
+    "Rutilant Arena":                   "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/309_",
+    "Broken Keel":                      "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/310_",
+    "Firmament Frontline: Glamoth":     "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/311_",
+    "Penacony, Land of the Dreams":     "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/312_",
+};
+
+const slotData = {
+    "Head": "0",
+    "Hands": "1",
+    "Body": "2",
+    "Feet": "3",
+    "Planar Sphere": "0",
+    "Link Rope": "1"
+};
+
 // Pairing stats to their display names
 const displayOptions = {
     "Outgoing Healing Boost": "Heal",
@@ -289,12 +554,18 @@ const displayOptions = {
     "Quantum DMG Boost": "Quantum",
     "Imaginary DMG Boost": "Imaginary",
     "HP": "HP",
-    "HP_": "HP%",
     "ATK": "ATK",
-    "ATK_": "ATK%",
     "DEF": "DEF",
-    "DEF_": "DEF%",
+    "CRIT Rate": "cRate",
+    "CRIT DMG": "cDMG",
+    "Break Effect": "Break",
+    "Effect Hit Rate": "EHR",
+    "Effect RES": "RES",
     "SPD": "SPD",
+
+    "HP_": "HP%",
+    "ATK_": "ATK%",
+    "DEF_": "DEF%",
     "CRIT Rate_": "cRate",
     "CRIT DMG_": "cDMG",
     "Break Effect_": "Break",
@@ -342,17 +613,15 @@ const displayOptions = {
 // List of main stat identifiers
 const mainstatOptions = [
     "HP",
-    "HP_",
     "ATK",
-    "ATK_",
-    "DEF_",
+    "DEF",
     "SPD",
-    "CRIT Rate_",
-    "CRIT DMG_",
-    "Break Effect_",
+    "CRIT Rate",
+    "CRIT DMG",
+    "Break Effect",
     "Outgoing Healing Boost",
     "Energy Regeneration Rate",
-    "Effect Hit Rate_",
+    "Effect Hit Rate",
     "Physical DMG Boost",
     "Fire DMG Boost",
     "Ice DMG Boost",
@@ -378,7 +647,22 @@ const substatOptions = [
     "Effect RES_"
 ];
 
-// Pairing stats to their icon counterparts (statToImage)
+const substatData = {
+    "HP": 42.33751,
+    "HP_": 4.32,
+    "ATK": 21.168754,
+    "ATK_": 4.32,
+    "DEF": 21.168754,
+    "DEF_": 5.4,
+    "SPD": 2.6,
+    "CRIT Rate_": 3.24,
+    "CRIT DMG_": 6.48,
+    "Break Effect_": 6.48,
+    "Effect Hit Rate_": 4.32,
+    "Effect RES_": 4.32
+};
+
+// Pairing stats to their icon counterparts (statToImage)  ----- OLD
 const mainstatToName = {
     "HP": "HP",
     "ATK": "ATK",
@@ -398,7 +682,7 @@ const mainstatToName = {
     "Imaginary DMG Boost": "Imaginary"
 };
 
-// Pairing stats to their icon counterparts (statToImage)
+// Pairing stats to their icon counterparts (statToImage) ----- OLD
 const substatToName = {
     "HP": "HP",
     "HP_": "HP",
@@ -410,6 +694,40 @@ const substatToName = {
     "CRIT Rate_": "cRate",
     "CRIT DMG_": "cDMG",
     "Break Effect_": "Break",
+    "Effect Hit Rate_": "EHR",
+    "Effect RES_": "RES"
+};
+
+const mainstatToSVG = {
+    "HP": "HP",
+    "ATK": "ATK",
+    "DEF": "DEF",
+    "CRIT Rate": "CR",
+    "CRIT DMG": "CD",
+    "Break Effect": "BE",
+    "Effect Hit Rate": "EHR",
+    "Outgoing Healing Boost": "HB",
+    "Energy Regeneration Rate": "ERR",
+    "Physical DMG Boost": "Phys",
+    "Fire DMG Boost": "Fire",
+    "Ice DMG Boost": "Ice",
+    "Lightning DMG Boost": "Lng",
+    "Wind DMG Boost": "Wind",
+    "Quantum DMG Boost": "Qnt",
+    "Imaginary DMG Boost": "Img"
+};
+
+const substatToSVG = {
+    "HP": "fHP",
+    "HP_": "HP",
+    "ATK": "fATK",
+    "ATK_": "ATK",
+    "DEF": "fDEF",
+    "DEF_": "DEF",
+    "SPD": "SPD",
+    "CRIT Rate_": "CR",
+    "CRIT DMG_": "CD",
+    "Break Effect_": "BE",
     "Effect Hit Rate_": "EHR",
     "Effect RES_": "RES"
 };
@@ -436,12 +754,6 @@ const statToImage = {
     "Imaginary": "data:image/webp;base64,UklGRhQCAABXRUJQVlA4TAcCAAAvE8AEEAVc27aNPTsoM9La1gO4stE5qdLatm3btm3btm39RvAGEVAAADAkzeKs+h9tJNu2/R9t27Zto9k2m22bx1Xgto3iY4ZnAPwrAI2Xi5IA8jsT4afj220uvt8ACpWdrieyCcyRUn/xH0nBPgjAUhoZowYSNhIE4I5IwcwAz1qkablYEdhU30xzvSK9aRNAzAlIrvbtTmrk1S7V0VpezM1miipQwIwrpBjzcQGOHl4H0+2VVPUFB9P2Hgmes5Gg0KtA43WXmrYXiNyDxXg/U8uPj+c7BaOsiLMdImdtYr7GRwkoVY762yMZowUCsy5ho3++uSuHyKXf4PkySYGqQmtj6OmW5unKzTkvJCfI3+vz6+5wpJnEfbzeGChVBQAExF3pbv/96W5/Zbg63dv16+vl3sNmMNrNUc+io/h621YOCG1YnmQjoCYE0ayo+xNrm8+P+xNzZSnx2RoyVhzPKcxPYNq0y5OArZZLyH9+XW9CbLn642N94vuvPRgkRsAtBw35gm4odXcW7D1R8vmTl5WaMtD6zZzwA8JABNHGAwLQEX97me/oDIkJXJsgY02VecELbtoE5r8H0c2CwNvvhsj+8NvTQD2BM5gFKiAmoK7nvX/v9EJov/njPdse9L6Yb+Z8KGAmitQh5wZnVX5BiqO4njAIgDhoFpJ2Quwoc4PeAsR0BQAA"
 }
 
-const setButtons = document.getElementById('set-buttons');
-const slotButtons = document.getElementById('slot-buttons');
-const mainstatButtons = document.getElementById('main-stat-buttons');
-const substatButtons = document.getElementById('sub-stat-buttons');
-let leniency = 0;
-let strict = 0;
 
 // Call the function when the page loads
 window.onload = () => {
